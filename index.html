@@ -106,6 +106,9 @@
     <!-- Button to start QR code scanner (request camera access) -->
     <button id="startCameraButton" onclick="startScanner()">Start Camera</button>
     
+    <!-- Enter button to manually trigger the scanner -->
+    <button onclick="triggerScanner()">Enter to Scan</button>
+    
     <!-- Button to stop QR code scanning -->
     <button onclick="stopScanner()">Stop Scanning</button>
   </div>
@@ -184,6 +187,21 @@
           };
         };
         reader.readAsDataURL(file);
+      }
+    }
+
+    // Trigger QR code scan manually when "Enter" button is pressed
+    function triggerScanner() {
+      if (!html5QrCode) {
+        alert('Please start the camera first.');
+      } else {
+        // Manually trigger QR code scanning when Enter button is pressed
+        html5QrCode.scan().then(result => {
+          document.getElementById('result').innerText = `Scanned QR Code: ${result}`;
+        }).catch(err => {
+          document.getElementById('result').innerText = 'Failed to scan QR Code.';
+          console.error(err);
+        });
       }
     }
   </script>
