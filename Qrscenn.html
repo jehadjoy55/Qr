@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Scanner</title>
+
+  <!-- Include the html5-qrcode library -->
+  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+  
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      color: #3498db;
+      text-align: center;
+    }
+
+    #reader {
+      width: 100%;
+      max-width: 500px;
+      height: 400px;
+      background-color: #222;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border: 2px solid #3498db;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    #result {
+      font-size: 1.3em;
+      color: #fff;
+      word-wrap: break-word;
+      max-width: 90%;
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: #333;
+    }
+
+    input[type="file"] {
+      padding: 10px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-size: 1.2em;
+      transition: background-color 0.3s;
+    }
+
+    input[type="file"]:hover {
+      background-color: #2980b9;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1.2em;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>QR Code Scanner</h1>
+  
+  <!-- QR Code scanner container -->
+  <div id="reader"></div>
+  
+  <!-- Display scanned result -->
+  <div id="result">Scanned QR Code result will appear here.</div>
+
+  <div class="controls">
+    <!-- File input to upload an image from the gallery -->
+    <input type="file" id="uploadImage" accept="image/*" onchange="scanImageFromFile()">
+    
+    <!-- Button to start QR code scanner (request camera access) -->
+    <button id="startCameraButton" onclick="startScanner()">Start Camera</button>
+    
+    <!-- Button to stop QR code scanning -->
+    <button onclick="stopScanner()">Stop Scanning</button>
+  </div>
+
+  <script>
+    // Function to handle scanning result
+    function onScanSuccess(decodedText, decodedResult) {
+      document.getElementById('result').innerText = `Scanned QR Code: ${decodedText}`;
+    }
+
+    // Function to handle errors
+    function onScanError(errorMessage) {
+      console.error(errorMessage);
+    }
+
+    // Initialize QR Code scanner
+    let html5QrCode;
+
+    // Start the QR code scanning with the camera
+    function startScanner() {
+      // Request permission to use the camera
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        // Start scanning when camera access is granted
+        html5QrCode = new Html5Qrcode("reader");
+
+        html5QrCode.start(
+          { facingMode: "environment" },  // Use the back camera
+          {
+            fps: 10, // frames per second
+            qrbox: { width: 250, height: 250 } // Set QR box size
+          },
+          onScanSuccess,   // Callback for successful scan
+          onScanError      // Callback for errors
+        ).catch(err => {
+          console.error("Error starting QR Code scanner: ", err);
+        });
+        
+        // Disable the Start Camera button after scanning starts
+        document.getElementById('startCameraButton').disabled = true;
+      } else {
+        alert('Camera access is not supported on your device.');
+      }
+    }
+
+    // Stop the QR code scanning
+    function stopScanner() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          document.getElementById('result').innerText = 'Scanner stopped.';
+        }).catch(err => {
+          console.error("Error stopping QR Code scanner: ", err);
+        });
+      }
+    }
+
+    // Scan QR code from image uploaded
+    function scanImageFromFile() {
+      const fileInput = document.getElementById('uploadImage');
+      const file = fileInput.files[0];
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const imageUrl = event.target.result;
+          const imageElement = new Image();
+          imageElement.src = imageUrl;
+          imageElement.onload = function() {
+            // Use html5-qrcode to scan the image
+            const qrCodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+            qrCodeScanner.scanImage(imageElement).then(result => {
+              document.getElementById('result').innerText = `Scanned QR Code: ${result}`;
+            }).catch(err => {
+              document.getElementById('result').innerText = 'Failed to scan the image.';
+              console.error(err);
+            });
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  </script>
+
+</body>
+</html>
